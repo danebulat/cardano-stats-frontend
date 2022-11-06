@@ -15,9 +15,6 @@
 
     <!-- side container -->
     <el-container class="full-height">
-      <el-aside>
-        <TheAside />
-      </el-aside>
 
       <!-- main container -->
       <el-container>
@@ -47,7 +44,7 @@
    background-color: #fff;
    height: 60px;
    width:100%;
-   margin-left: 200px;
+   /* margin-left: 200px; */
    position: fixed;
    bottom: 0;
    left: 0;
@@ -55,6 +52,10 @@
  body {
    height: 100vh;
    width: 100vw;
+ }
+ /* cut off bottom of main container for footer */
+ .el-container {
+   margin-bottom: 60px;
  }
  #app {
    height: 100%;
