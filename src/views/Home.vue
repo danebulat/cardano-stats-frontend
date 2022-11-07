@@ -106,8 +106,14 @@
        const req = new Request(reqUrl, reqInit);
        const res = await fetch(req);
 
+       // get json and sort on id
        this.recentReqs = await res.json();
-       console.log(this.recentReqs);
+
+       this.recentReqs.sort( (a, b) => {
+         if (a.id < b.id)  return  1;
+         if (a.id > b.id)  return -1;
+         return 0;
+       });
      },
      
      onClear() {
