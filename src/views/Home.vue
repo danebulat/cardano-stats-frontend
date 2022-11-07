@@ -166,7 +166,7 @@
 
           <el-row>
             <el-col :span="24">
-              <el-form-item label="Query params">
+              <el-form-item label="Query Params">
                 <el-input v-model="form.queryParams" type="textarea" placeholder="separate with newline" rows="3" class="code-input" />
               </el-form-item>
             </el-col>
@@ -189,7 +189,7 @@
 
         <template #header>
           <div class="card-header">
-            <h1>Recent Requests</h1>
+            <h1>Cached Requests</h1>
             <el-button @click="fetchRecent" class="button" type="primary">Fetch</el-button>
           </div>
         </template>
@@ -198,7 +198,7 @@
           <el-table-column prop="id"     label="ID" width="50" />
           <el-table-column prop="reqUrl" label="URL" />
 
-          <el-table-column fixed="right" label="Operations" width="120">
+          <el-table-column fixed="right" label="Ops" width="120">
             <template #default="scope">
               <el-button
                 link type="primary"
@@ -249,9 +249,6 @@
    font-weight: bold;
    font-size: 1.0em;
    color: #303133;
- }
- .home-container img {
-   max-width: 230px;
  }
  .card-header {
    display: flex;

@@ -2,9 +2,9 @@
  export default {
    data() {
      return {
-       tokenRegistryUrl: "https://github.com/cardano-foundation/cardano-token-registry",
-       githubUrl: "https://github.com/danebulat",
-       blockFrostUrl: "https://blockfrost.io/",
+       tokenRegistryUrl:  "https://github.com/cardano-foundation/cardano-token-registry",
+       githubUrl:         "https://github.com/danebulat/cardano-stats-frontend",
+       blockFrostUrl:     "https://blockfrost.io/",
        blockFrostDocsUrl: "https://blockfrost.dev/"
      }
    }
@@ -52,17 +52,22 @@
  }
  .logo {
    display: block;
-   padding: 20px 0;
+   padding: 20px 10px;
    font-weight: bold;
  }
  .el-menu-item {
-  font-family: Avenir, Helvetica, Arial, sans-serif !important
+   font-family: Avenir, Helvetica, Arial, sans-serif !important
  }
  .outer-menu-wrapper {
    background: white;
+   border-bottom: 1px solid #dcdfe6;
  }
  .inner-menu-wrapper {
    max-width: 960px;
    margin: auto auto;
+ }
+ /* remove border */
+ .el-menu--horizontal {
+   border: none;
  }
 </style>
