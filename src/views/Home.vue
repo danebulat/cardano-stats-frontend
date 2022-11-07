@@ -121,6 +121,27 @@
        this.form.apiKey      = "";
        this.form.queryParams = "";
      },
+
+     async deleteReq(reqId) {
+       console.log('id to delete: ' + reqId);
+
+       const reqInit = {
+         method:  'DELETE',
+         headers: {'Accept': 'application/json'},
+         mode:    'cors',
+         cache:   'no-cache'
+       };
+
+       const reqUrl = `http://localhost:8081/requests/${reqId}`;
+       const req = new Request(reqUrl, reqInit);
+       const res = await fetch(req);
+
+       // remove deleted item from table
+       this.tableData = this.tableData.filter(item => item.id != reqId);
+
+       console.log('response:');
+       console.log(res);
+     }
    },
    computed: {
       responseNotEmpty() {
@@ -210,8 +231,18 @@
         <el-table :data="tableData" style="width: 100%">
           <el-table-column prop="id"     label="ID" width="50" />
           <el-table-column prop="reqUrl" label="URL" />
+
+          <el-table-column fixed="right" label="Operations" width="120">
+            <template #default="scope">
+              <el-button
+                link type="primary"
+                size="small"
+                @click.prevent="deleteReq(scope.row.id)">
+                  Delete
+              </el-button>
+            </template>
+          </el-table-column>
         </el-table>
-        
       </el-card>
     </el-col>
   </el-row>
