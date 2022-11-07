@@ -1,12 +1,15 @@
 <script>
- //import sourceData from '../data.json'
-
+ import renderjson from 'renderjson'
+ 
  export default {
    data() {
      return {
        form: {
-         request: "",
+         endpointUrl: "https://cardano-preview.blockfrost.io/api/v0/blocks/latest",
+         apiKey: "",
+         queryParams: ""
        },
+       response: "",
        tableData: [
          {
            date: '2016-05-03',
@@ -32,15 +35,53 @@
      }
    },
    methods: {
-     onSubmit() {
-       console.log("Submit clicked");
+     constructRequestUrl() {
+       if (this.form.queryParams.length == 0) {
+         return this.form.endpointUrl;
+       }
+       
+       let params = this.form.queryParams.split('\n');
+       url += '?';
+       params.forEach((param, i, arr) => {
+         url += param;
+         if (i < arr.length - 1) url += '&'
+       });
+       
+       return url;
      },
+
+     onSubmit() {
+       let fullUrl = this.constructRequestUrl();
+       this.makeRequest(fullUrl);
+     },
+     
+     async makeRequest(reqUrl) {
+       const reqHeaders = new Headers();
+       reqHeaders.append('project_id', `${this.form.apiKey}`);
+
+       const reqInit = {
+         method:  'GET',
+         headers: reqHeaders,
+         mode:    'cors',
+         cache:   'default'
+       };
+
+       const req = new Request(reqUrl, reqInit);
+       const response = await fetch(req);
+
+       this.response = await response.json();
+       console.log(this.response);
+     },
+     
      onClear() {
-       this.form.request = "";
-     }
+       this.form.endpointUrl = "";
+       this.form.apiKey      = "";
+       this.form.queryParams = "";
+     },
+   },
+   computed: {
    }
  }
- 
 </script>
 
 <template>
@@ -55,16 +96,27 @@
         </template>
         
         <el-form :model="form" label-position="top">
+
           <el-row>
             <el-col :span="24">
-              <el-form-item label="Curl Request">
-                <el-input
-                  v-model="form.request"
-                  size="large"
-                  type="textarea"
-                  placeholder="curl request"
-                  rows="4"
-                  class="code-input" />
+              <el-form-item label="API Key">
+                <el-input v-model="form.apiKey" type="textarea" rows="1" placeholder="API key" resize="none" maxlength="50" class="code-input" />
+              </el-form-item>
+            </el-col>
+          </el-row>
+          
+          <el-row>
+            <el-col :span="24">
+              <el-form-item label="Endpoint URL">
+                <el-input v-model="form.endpointUrl" type="textarea" placeholder="url endpoint" rows="2" resize="none" class="code-input" />
+              </el-form-item>
+            </el-col>
+          </el-row>
+
+          <el-row>
+            <el-col :span="24">
+              <el-form-item label="Query params">
+                <el-input v-model="form.queryParams" type="textarea" placeholder="url endpoint" rows="3" class="code-input" />
               </el-form-item>
             </el-col>
           </el-row>
@@ -89,6 +141,10 @@
             <h1>Response</h1>
           </div>
         </template>
+
+        <div v-if="responseNotEmpty" class="response-wrapper">
+          <pre>{{ response }}</pre>
+        </div>
 
       </el-card>
     </el-col>
@@ -144,6 +200,9 @@
  }
  .code-input {
    font-family: monospace;
+ } 
+ .response-wrapper {
+   overflow: scroll;
  }
 </style>
 
