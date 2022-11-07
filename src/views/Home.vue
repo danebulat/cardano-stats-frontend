@@ -1,14 +1,10 @@
 <script>
- //import sourceData from '../data.json'
-
- import renderjson from 'renderjson'
- 
  export default {
    data() {
      return {
        form: {
          endpointUrl: "https://cardano-preview.blockfrost.io/api/v0/blocks/latest",
-         apiKey: "",
+         apiKey:      "",
          queryParams: ""
        },
        response:   "",
@@ -17,6 +13,7 @@
      }
    },
    methods: {
+     // Utility: Adds query params to base URL
      constructRequestUrl() {
        if (this.form.queryParams.length == 0) {
          return this.form.endpointUrl;
@@ -32,102 +29,77 @@
        return url;
      },
 
+     // Submit handler
      onSubmit() {
        let fullUrl = this.constructRequestUrl();
        this.makeRequest(fullUrl);
      },
-     
-     async makeRequest(reqUrl) {
-       const reqHeaders = new Headers();
-       reqHeaders.append('project_id', `${this.form.apiKey}`);
 
+     // Blockfrost API request
+     async makeRequest(reqUrl) {
        const reqInit = {
          method:  'GET',
-         headers:  reqHeaders,
+         headers:  {'project_id': `${this.form.apiKey}`},
          mode:    'cors',
-         cache:   'default'
+         cache:   'no-cache'
        };
 
-       const req = new Request(reqUrl, reqInit);
-       const response = await fetch(req);
+       const req     = new Request(reqUrl, reqInit);
+       const res     = await fetch(req);
+       this.response = await res.json();
 
-       // wait for response from blockfrost
-       this.response = await response.json();
-
-       // save url in local redis database
-       if (response.ok) {
-         console.log('Making redis request...');
-
-         // headers
-         const reqHeadersRedis = new Headers();
-         reqHeadersRedis.append('Accept',       'application/json');
-         reqHeadersRedis.append('Content-Type', 'application/json');
-
-         // JSON body
-         const reqBody = `{ "getReqUrl": "${reqUrl}" }`;
-
-         // request data
-         const reqInitRedis = {
-           method: 'POST',
-           headers: reqHeadersRedis,
-           body:    reqBody,
-           mode:   'cors',
-           cache:  'no-cache'
-         };
-
-         // make request
-         const redisReqUrl = "http://localhost:8081/requests";
-         const redisReq = new Request(redisReqUrl, reqInitRedis);
-
-         const redisResponse = await fetch(redisReq);
-         console.log('Server response:');
-         console.log(redisResponse);
+       // Server request to save url in redis database
+       if (res.ok) {
+         this.postToServer(reqUrl)
        }
      },
      
+     // Server request to store url in redis database
+     async postToServer(reqUrl) {
+       const reqInit = {
+         method:  'POST',
+         headers: {'Accept': 'application/json', 'Content-Type': 'application/json'},
+         body:   `{ "getReqUrl": "${reqUrl}" }`,
+         mode:    'cors',
+         cache:   'no-cache'
+       };
+       
+       const req = new Request("http://localhost:8081/requests", reqInit);
+       const res = await fetch(req);
+     },
+
+     // Server request to fetch all urls in redis database
      async fetchRecent() {
-       console.log('Fetch recent requests...');
-
-       // headers
-       const reqHeaders = new Headers();
-       reqHeaders.append('Accept',       'application/json');
-       reqHeaders.append('Content-Type', 'application/json');
-
-       // request data
        const reqInit = {
          method: 'GET',
-         headers: reqHeaders,
+         headers: {'Accept':'application/json', 'Content-Type':'application/json'},
          mode:   'cors',
          cache:  'no-cache'
        };
 
-       // make request
-       const reqUrl = "http://localhost:8081/requests";
-       const req = new Request(reqUrl, reqInit);
+       const req = new Request("http://localhost:8081/requests", reqInit);
        const res = await fetch(req);
-
-       // get json and sort on id
+       
        this.recentReqs = await res.json();
-
        this.recentReqs.sort( (a, b) => {
          if (a.id < b.id)  return  1;
          if (a.id > b.id)  return -1;
          return 0;
        });
      },
-     
+
+     // Clear input form
      onClear() {
        this.form.endpointUrl = "";
        this.form.apiKey      = "";
        this.form.queryParams = "";
      },
 
+     // Server delete request to remove a url from redis database
      async deleteReq(reqId) {
-       console.log('id to delete: ' + reqId);
-
        const reqInit = {
          method:  'DELETE',
-         headers: {'Accept': 'application/json'},
+         headers: {'Accept':'application/json'},
          mode:    'cors',
          cache:   'no-cache'
        };
@@ -136,27 +108,16 @@
        const req = new Request(reqUrl, reqInit);
        const res = await fetch(req);
 
-       // remove deleted item from table
+       // Remove deleted item from table
        this.tableData = this.tableData.filter(item => item.id != reqId);
-
-       console.log('response:');
-       console.log(res);
      }
    },
-   computed: {
-      responseNotEmpty() {
-        return this.response != "";
-      }
-   },
    watch: {
+     // Update table data when urls re-fetched from server
      recentReqs(oldData, newData) {
-       console.log('recentReqs changed!!');
-
        this.tableData = [];
        
        for (const property in this.recentReqs) {
-         console.log(`${property}: ${this.recentReqs[property].reqUrl  }`);
-
          let cell = {
            id:     `${this.recentReqs[property].id}`,
            reqUrl: `${this.recentReqs[property].reqUrl}`
@@ -165,6 +126,11 @@
          this.tableData.push(cell);
        }       
      }
+   },
+   computed: {
+     responseNotEmpty() {
+       return this.response != "";
+     }
    }
  }
 </script>
@@ -172,7 +138,7 @@
 <template>
   <el-row :gutter="20">
     <el-col :span="12">
-      <el-card class="box-card card-height">
+      <el-card class="card-height">
 
         <template #header>
           <div class="card-header">
@@ -201,7 +167,7 @@
           <el-row>
             <el-col :span="24">
               <el-form-item label="Query params">
-                <el-input v-model="form.queryParams" type="textarea" placeholder="url endpoint" rows="3" class="code-input" />
+                <el-input v-model="form.queryParams" type="textarea" placeholder="separate with newline" rows="3" class="code-input" />
               </el-form-item>
             </el-col>
           </el-row>
@@ -219,7 +185,7 @@
     </el-col>
 
     <el-col :span="12">
-      <el-card class="box-card card-height">
+      <el-card class="card-height">
 
         <template #header>
           <div class="card-header">
@@ -257,8 +223,9 @@
           </div>
         </template>
 
-        <div v-if="responseNotEmpty" class="response-wrapper">
-          <pre>{{ response }}</pre>
+        <div class="response-wrapper">
+          <pre v-if="responseNotEmpty">{{ response }}</pre>
+          <p v-else>The response to a submitted request will appear here.</p>
         </div>
       </el-card>
     </el-col>
@@ -271,11 +238,9 @@
    margin-top: 2px;
    margin-bottom: 2px;
  }
- .box-card {
-   height: 100%;
- }
  .card-height {
    max-height: 490px;
+   height: 490px;
    overflow: auto;
  }
  .el-form-item label {
@@ -283,6 +248,7 @@
    display: block;
    font-weight: bold;
    font-size: 1.0em;
+   color: #303133;
  }
  .home-container img {
    max-width: 230px;
@@ -296,7 +262,7 @@
    font-family: monospace;
  } 
  .response-wrapper {
-   overflow: scroll;
+   overflow: auto;
  }
  .mb-20 {
    margin-bottom: 20px;
