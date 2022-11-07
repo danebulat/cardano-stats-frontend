@@ -1,4 +1,6 @@
 <script>
+ //import sourceData from '../data.json'
+
  import renderjson from 'renderjson'
  
  export default {
@@ -61,7 +63,7 @@
 
        const reqInit = {
          method:  'GET',
-         headers: reqHeaders,
+         headers:  reqHeaders,
          mode:    'cors',
          cache:   'default'
        };
@@ -69,8 +71,38 @@
        const req = new Request(reqUrl, reqInit);
        const response = await fetch(req);
 
+       // wait for response from blockfrost
        this.response = await response.json();
-       console.log(this.response);
+
+       // save url in local redis database
+       if (response.ok) {
+         console.log('Making redis request...');
+
+         // headers
+         const reqHeadersRedis = new Headers();
+         reqHeadersRedis.append('Accept',       'application/json');
+         reqHeadersRedis.append('Content-Type', 'application/json');
+
+         // JSON body
+         const reqBody = `{ "getReqUrl": "${reqUrl}" }`;
+
+         // request data
+         const reqInitRedis = {
+           method: 'POST',
+           headers: reqHeadersRedis,
+           body:    reqBody,
+           mode:   'cors',
+           cache:  'no-cache'
+         };
+
+         // make request
+         const redisReqUrl = "http://localhost:8081/requests";
+         const redisReq = new Request(redisReqUrl, reqInitRedis);
+
+         const redisResponse = await fetch(redisReq);
+         console.log('Server response:');
+         console.log(redisResponse);
+       }
      },
      
      onClear() {
@@ -80,6 +112,9 @@
      },
    },
    computed: {
+      responseNotEmpty() {
+        return this.response != "";
+      }
    }
  }
 </script>
