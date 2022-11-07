@@ -11,29 +11,9 @@
          apiKey: "",
          queryParams: ""
        },
-       response: "",
-       tableData: [
-         {
-           date: '2016-05-03',
-           name: 'Tom',
-           address: 'No. 189, Grove St, Los Angeles',
-         },
-         {
-           date: '2016-05-02',
-           name: 'Tom',
-           address: 'No. 189, Grove St, Los Angeles',
-         },
-         {
-           date: '2016-05-04',
-           name: 'Tom',
-           address: 'No. 189, Grove St, Los Angeles',
-         },
-         {
-           date: '2016-05-01',
-           name: 'Tom',
-           address: 'No. 189, Grove St, Los Angeles',
-         },
-       ]
+       response:   "",
+       recentReqs: null,
+       tableData:  []
      }
    },
    methods: {
@@ -105,6 +85,31 @@
        }
      },
      
+     async fetchRecent() {
+       console.log('Fetch recent requests...');
+
+       // headers
+       const reqHeaders = new Headers();
+       reqHeaders.append('Accept',       'application/json');
+       reqHeaders.append('Content-Type', 'application/json');
+
+       // request data
+       const reqInit = {
+         method: 'GET',
+         headers: reqHeaders,
+         mode:   'cors',
+         cache:  'no-cache'
+       };
+
+       // make request
+       const reqUrl = "http://localhost:8081/requests";
+       const req = new Request(reqUrl, reqInit);
+       const res = await fetch(req);
+
+       this.recentReqs = await res.json();
+       console.log(this.recentReqs);
+     },
+     
      onClear() {
        this.form.endpointUrl = "";
        this.form.apiKey      = "";
@@ -115,6 +120,24 @@
       responseNotEmpty() {
         return this.response != "";
       }
+   },
+   watch: {
+     recentReqs(oldData, newData) {
+       console.log('recentReqs changed!!');
+
+       this.tableData = [];
+       
+       for (const property in this.recentReqs) {
+         console.log(`${property}: ${this.recentReqs[property].reqUrl  }`);
+
+         let cell = {
+           id:     `${this.recentReqs[property].id}`,
+           reqUrl: `${this.recentReqs[property].reqUrl}`
+         };
+
+         this.tableData.push(cell);
+       }       
+     }
    }
  }
 </script>
@@ -122,7 +145,7 @@
 <template>
   <el-row :gutter="20">
     <el-col :span="12">
-      <el-card class="box-card top-card">
+      <el-card class="box-card card-height">
 
         <template #header>
           <div class="card-header">
@@ -169,6 +192,26 @@
     </el-col>
 
     <el-col :span="12">
+      <el-card class="box-card card-height">
+
+        <template #header>
+          <div class="card-header">
+            <h1>Recent Requests</h1>
+            <el-button @click="fetchRecent" class="button" type="primary">Fetch</el-button>
+          </div>
+        </template>
+
+        <el-table :data="tableData" style="width: 100%">
+          <el-table-column prop="id"     label="ID" width="50" />
+          <el-table-column prop="reqUrl" label="URL" />
+        </el-table>
+        
+      </el-card>
+    </el-col>
+  </el-row>
+
+  <el-row :gutter="20" class="mt-20">
+    <el-col :span="24" class="mb-20">
       <el-card class="box-card">
 
         <template #header>
@@ -180,27 +223,6 @@
         <div v-if="responseNotEmpty" class="response-wrapper">
           <pre>{{ response }}</pre>
         </div>
-
-      </el-card>
-    </el-col>
-  </el-row>
-
-  <el-row :gutter="20" style="margin-top:20px;">
-    <el-col :span="24">
-      <el-card class="box-card">
-
-        <template #header>
-          <div class="card-header">
-            <h1>Recent Requests</h1>
-          </div>
-        </template>
-
-        <el-table :data="tableData" style="width: 100%">
-          <el-table-column prop="date" label="Date" width="180" />
-          <el-table-column prop="name" label="Name" width="180" />
-          <el-table-column prop="address" label="Address" />
-        </el-table>
-        
       </el-card>
     </el-col>
   </el-row>
@@ -213,11 +235,11 @@
    margin-bottom: 2px;
  }
  .box-card {
-   margin-top: 12px;
    height: 100%;
  }
- .top-card {
-   height: 100%;
+ .card-height {
+   max-height: 490px;
+   overflow: auto;
  }
  .el-form-item label {
    padding-bottom: 10px;
@@ -238,6 +260,12 @@
  } 
  .response-wrapper {
    overflow: scroll;
+ }
+ .mb-20 {
+   margin-bottom: 20px;
+ }
+ .mt-20 {
+   margin-top: 20px;
  }
 </style>
 
